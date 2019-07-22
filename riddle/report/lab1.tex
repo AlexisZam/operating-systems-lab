@@ -1,0 +1,419 @@
+\documentclass[12pt,titlepage]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[english,greek]{babel}
+
+\newcommand{\en}{\textlatin}
+
+\usepackage[a4paper]{geometry}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\usepackage{underscore}
+
+\title{Εργαστήριο Λειτουργικών Συστήματων\\
+1η Άσκηση}
+\author{Αλέξιος Ζαμάνης\\
+03115010\\
+Μιχαήλ Μεγγίσογλου\\
+03115014}
+
+\lstset{
+	language=C,
+	basicstyle=\ttfamily,
+	breaklines=true,
+	tabsize=4,
+	showstringspaces=false,
+	keywordstyle=\color{blue},
+	stringstyle=\color{red}
+}
+
+\begin{document}
+
+\maketitle
+
+\section{Δοκιμασίες}
+
+\begin{enumerate}
+
+\setcounter{enumi}{-1}
+
+\item
+
+Πρόβλημα:
+
+\latintext
+\begin{lstlisting}[language=bash]
+$ strace ./riddle
+openat(AT_FDCWD, ".hello_there", O_RDONLY) = -1 ENOENT (No such file or directory)
+\end{lstlisting}
+\greektext
+
+Λύση:
+
+\latintext
+\begin{lstlisting}[language=bash]
+$ touch .hello_there
+\end{lstlisting}
+\greektext
+
+Σχόλια: Δεν υπάρχει το αρχείο, ούτε το ανοίγουμε με \en{O_CREAT}, οπότε το δημιουργούμε.
+
+\item
+
+Πρόβλημα:
+
+\latintext
+\begin{lstlisting}[language=bash]
+$ strace ./riddle
+openat(AT_FDCWD, ".hello_there", O_WRONLY) = 4
+\end{lstlisting}
+\greektext
+
+Λύση:
+
+\latintext
+\begin{lstlisting}[language=bash]
+$ chmod -w .hello_there
+\end{lstlisting}
+\greektext
+
+Σχόλια: Αφαιρούμε το δικαίωμα εγγραφής από το αρχείο.
+
+\item
+
+Πρόβλημα:
+
+\latintext
+\begin{lstlisting}[language=bash]
+$ strace ./riddle
+rt_sigaction(SIGALRM, {sa_handler=0x55e2e8605d40, sa_mask=[ALRM], sa_flags=SA_RESTORER|SA_RESTART, sa_restorer=0x7f0e02f31f20}, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+rt_sigaction(SIGCONT, {sa_handler=0x55e2e8605d40, sa_mask=[CONT], sa_flags=SA_RESTORER|SA_RESTART, sa_restorer=0x7f0e02f31f20}, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+alarm(10) = 0
+pause() = ? ERESTARTNOHAND (To be restarted if no handler)
+--- SIGALRM {si_signo=SIGALRM, si_code=SI_KERNEL} ---
+rt_sigreturn({mask=[]}) = -1 EINTR (Interrupted system call)
+
+\end{lstlisting}
+\greektext
+
+Λύση:
+
+\latintext
+\begin{lstlisting}[language=bash]
+$ ./riddle
+\end{lstlisting}
+\greektext
+
+\latintext
+\begin{lstlisting}[language=bash]
+$ pkill -SIGCONT riddle
+\end{lstlisting}
+\greektext
+
+Σχόλια: Ορίζονται δύο \en{handlers}, ένας για \en{SIGALRM} και ένας για \en{SIGCONT}. Μέσα σε 10 δευτερόλεπτα στέλνουμε \en{SIGCONT} στη διεργασία, πριν τη σκοτώσει ο \en{handler} της \en{SIGALRM}.
+
+\item
+
+Πρόβλημα:
+
+\latintext
+\begin{lstlisting}[language=bash]
+$ ltrace ./riddle
+getenv("ANSWER") = nil
+\end{lstlisting}
+\greektext
+
+Λύση:
+
+\latintext
+\begin{lstlisting}[language=bash]
+$ export ANSWER=42
+\end{lstlisting}
+\greektext
+
+Σχόλια: Ορίζουμε τη μεταβλητή περιβάλλοντος \en{ANSWER} και της δίνουμε την τιμη 42 (προφανώς).
+
+\item
+
+Πρόβλημα:
+
+\latintext
+\begin{lstlisting}[language=bash]
+$ strace ./riddle
+openat(AT_FDCWD, "magic_mirror", O_RDWR) = -1 ENOENT (No such file or directory)
+\end{lstlisting}
+\greektext
+
+Λύση:
+
+\latintext
+\begin{lstlisting}[language=bash]
+$ mkfifo magic_mirror
+\end{lstlisting}
+\greektext
+
+Σχόλια: Δημιουργούμε ένα \en{named pipe} με το όνομα \en{magic_mirror}, ώστε η διεργασία να μπορεί με \en{FIFO} τρόπο να διαβάζει ό,τι γράφει.
+
+\item
+
+Πρόβλημα:
+
+\latintext
+\begin{lstlisting}[language=bash]
+$ strace ./riddle
+fcntl(99, F_GETFD) = -1 EBADF (Bad file descriptor)
+\end{lstlisting}
+\greektext
+
+Λύση:
+
+\latintext
+\begin{lstlisting}[language=bash]
+$ exec 99<>foo
+\end{lstlisting}
+\greektext
+
+Σχόλια: Δημιουργούμε και ανοίγουμε ένα αρχείο ονόματι \en{foo} με περιγραφητή 99. Αυτός κληρονομείται από τη \en{riddle}.
+
+\item
+
+Πρόβλημα:
+
+\latintext
+\begin{lstlisting}[language=bash]
+$ strace -f ./riddle
+[pid 545] read(33, <unfinished ...>
+[pid 545] <... read resumed> 0x7ffe758cbcdc, 4) = -1 EBADF (Bad file descriptor)
+[pid 544] write(34, "\0\0\0\0", 4 <unfinished ...>
+[pid 544] <... write resumed> ) = -1 EBADF (Bad file descriptor)
+$ strace -f ./challenge6
+[pid 623] read(33, <unfinished ...>
+[pid 623] <... read resumed> 0x7ffe758cbcdc, 4) = -1 EBADF (Bad file descriptor)
+[pid 622] write(34, "\0\0\0\0", 4 <unfinished ...>
+[pid 622] <... write resumed> ) = -1 EBADF (Bad file descriptor)
+[pid 622] read(53, <unfinished ...>
+[pid 622] <... read resumed> 0x7fffa6953b4c, 4) = -1 EBADF (Bad file descriptor)
+[pid 623] write(54, "\1\0\0\0", 4) = -1 EBADF (Bad file descriptor)
+\end{lstlisting}
+\greektext
+
+Λύση:
+
+\latintext
+\begin{lstlisting}[language=bash]
+$ ./challenge6
+\end{lstlisting}
+\greektext
+
+Σχόλια: Ανοίγουμε 2 \en{pipes} και αντιγράφουμε τα άκρα τους στους ζητούμενους περιγραφητές, ήτοι 33, 34, 53 και 54.
+
+\item
+
+Πρόβλημα:
+
+\latintext
+\begin{lstlisting}[language=bash]
+$ strace ./riddle
+lstat(".hey_there", 0x7fff5fed1390) = -1 ENOENT (No such file or directory)
+\end{lstlisting}
+\greektext
+
+Λύση:
+
+\latintext
+\begin{lstlisting}[language=bash]
+$ ln .hello_there .hey_there
+\end{lstlisting}
+\greektext
+
+Σχόλια: Δημιουργούμε ένα σύνδεσμο στο αρχείο \en{.hello_there} ονόματι \en{.hey_there}.
+
+\item
+
+Πρόβλημα:
+
+\latintext
+\begin{lstlisting}[language=bash]
+$ strace ./riddle
+openat(AT_FDCWD, "bf00", O_RDONLY) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "bf00", O_RDONLY) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "bf00", O_RDONLY) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "bf00", O_RDONLY) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "bf00", O_RDONLY) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "bf00", O_RDONLY) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "bf00", O_RDONLY) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "bf00", O_RDONLY) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "bf00", O_RDONLY) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "bf00", O_RDONLY) = -1 ENOENT (No such file or directory)
+\end{lstlisting}
+\greektext
+
+Λύση:
+
+\latintext
+\begin{lstlisting}[language=bash]
+$ for i in {0..9}
+do
+	ln -s /dev/urandom bf0${i}
+done
+\end{lstlisting}
+\greektext
+
+Σχόλια: Δημιουργούμε συμβολικούς συνδέσμους στο \en{urandom} ονόματι \en{.bf0\{0..9\}}, οπότε αυτό επιστρέφει τυχαία δεδομένα για ανάγνωση.
+
+\item
+
+Πρόβλημα:
+
+\latintext
+\begin{lstlisting}[language=bash]
+$ strace ./riddle
+connect(4, {sa_family=AF_INET, sin_port=htons(49842), sin_addr=inet_addr("127.0.0.1")}, 16) = -1 ECONNREFUSED (Connection refused)
+\end{lstlisting}
+\greektext
+
+Λύση:
+
+\latintext
+\begin{lstlisting}[language=bash]
+$ nc -l localhost 49842
+How much is 16054 + 1? 16055
+\end{lstlisting}
+\greektext
+\latintext
+\begin{lstlisting}[language=bash]
+$ ./riddle
+\end{lstlisting}
+\greektext
+
+Σχόλια: Ανοίγουμε μια σύνδεση \en{TCP} στο \en{localhost} με τη ζητούμενη θύρα και ακούμε σε αυτήν για την επερώτηση του προγράμματος. Έπειτα απαντάμε.
+
+\item
+
+Πρόβλημα:
+
+\latintext
+\begin{lstlisting}[language=bash]
+$ strace ./riddle
+openat(AT_FDCWD, "secret_number", O_RDWR|O_CREAT|O_TRUNC, 0600) = 4
+unlink("secret_number") = 0
+write(4, "The number I am thinking of righ"..., 4096) = 4096
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_SHARED, 4, 0) = 0x7f1c5d832000
+close(4)= 0
+\end{lstlisting}
+\greektext
+
+Λύση:
+
+\latintext
+\begin{lstlisting}[language=bash]
+$ touch secret_number
+$ ./challenge10
+\end{lstlisting}
+\greektext
+
+Σχόλια: Δημιουργούμε το αρχείο \en{secret_number}. Έπειτα το πρόγραμμα μας το ανοίγει, ώστε να μη διαγραφεί με το \en{unlink}. To \en{riddle} γράφει στο αρχείο. Εμείς το διαβάζουμε ύστερα από 1 δευτερόλεπτο και το κλείνουμε. Έπειτα γράφουμε την απάντηση.
+
+\item
+
+Σχόλια: Ακριβώς όπως η προηγούμενη.
+
+\item
+
+Πρόβλημα:
+
+\latintext
+\begin{lstlisting}[language=bash]
+$ strace ./riddle
+openat(AT_FDCWD, "/tmp/riddle-0j0oR8", O_RDWR|O_CREAT|O_EXCL, 0600) = 4
+ftruncate(4, 4096) = 0
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_SHARED, 4, 0) = 0x7fe7b419c000
+\end{lstlisting}
+\greektext
+
+Λύση:
+
+\latintext
+\begin{lstlisting}[language=bash]
+$ ls /tmp | grep riddle
+$ ./challenge12 A /tmp/riddle-0j0oR8
+\end{lstlisting}
+\greektext
+
+Σχόλια: Τρέχουμε το \en{riddle}. Μέσα σε λίγα δευτερόλεπτα βρίσκουμε το όνομα του αρχείου που δημιούργησε, τρέχουμε το πρόγραμμά μας με παραμέτρους το ζητούμενο γράμμα και το όνομα, και αυτο γράφει στο εν λόγω αρχείο το γράμμα στο σωστό \en{offset}.
+
+\item
+
+Πρόβλημα:
+
+\latintext
+\begin{lstlisting}[language=bash]
+$ strace ./riddle
+openat(AT_FDCWD, ".hello_there", O_RDWR|O_CREAT, 0600) = -1 EACCES (Permission denied)
+$ strace ./riddle
+ftruncate(4, 16384) = 0
+\end{lstlisting}
+\greektext
+
+Λύση:
+
+\latintext
+\begin{lstlisting}[language=bash]
+$ chmod +w .hello_there
+$ ./challenge13
+\end{lstlisting}
+\greektext
+
+Σχόλια: Επαναφέρουμε το δικαίωμα εγγραφής στο αρχείο \en{.hello_there}. Το πρόγραμμά μας τρέχει το \en{riddle}, που μικραίνει το μέγεθός του αρχείου, και το επαναφέρει στην αρχική τιμή του.
+
+\item
+
+Πρόβλημα:
+
+\latintext
+\begin{lstlisting}[language=bash]
+$ strace ./riddle
+getpid() = 7291
+\end{lstlisting}
+\greektext
+
+Λύση:
+
+\latintext
+\begin{lstlisting}[language=bash]
+$ ./challenge14
+\end{lstlisting}
+\greektext
+
+Σχόλια: Το πρόγραμμά μας κάνει \en{fork} το \en{riddle} μέχρι να πετύχει το σωστό \en{pid}.
+
+\end{enumerate}
+
+\section{Παράρτημα: Πηγαίος κώδικας}
+
+\latintext
+
+\subsection{\textlatin{challenge6.c}}
+
+\lstinputlisting{../riddle/challenge6.c}
+
+\subsection{\textlatin{challenge10.c}}
+
+\lstinputlisting{../riddle/challenge10.c}
+
+\subsection{\textlatin{challenge12.c}}
+
+\lstinputlisting{../riddle/challenge12.c}
+
+\subsection{\textlatin{challenge13.c}}
+
+\lstinputlisting{../riddle/challenge13.c}
+
+\subsection{\textlatin{challenge14.c}}
+
+\lstinputlisting{../riddle/challenge14.c}
+
+\greektext
+
+\end{document}
